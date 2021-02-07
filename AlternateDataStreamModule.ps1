@@ -1,60 +1,53 @@
 function Get-AlternateDataStream {
     <#
         .SYNOPSIS
-        Adds a file name extension to a supplied name.
+        Get a list of files with alternate data streams on NTFS drives.
 
         .DESCRIPTION
-        Adds a file name extension to a supplied name.
-        Takes any strings for the file name or extension.
+        Get a list of files with alternate data streams. Every file has the data stream :$Data. This command only yields files with additional alternate data streams.
 
-        .PARAMETER Name
-        Specifies the file name.
+        .PARAMETER Path
+        Specifies the path where to search for alternate data streams.
 
-        .PARAMETER Extension
-        Specifies the extension. "Txt" is the default.
+        .PARAMETER Recurse
+        Search directories recursively.
+
+        .PARAMETER ExportToJson
+        A switch to export the results to a JSON-file.
+
+        .PARAMETER OutputFile
+        Specifies a filename for the JSON-file. This parameter is only used when the switch ExportToJson is set. Default is "AlternateDataStreams.json".
 
         .INPUTS
-        None. You cannot pipe objects to Add-Extension.
+        None.
 
         .OUTPUTS
-        System.String. Add-Extension returns a string with the extension or file name.
+        Returns a list of files with alternate data streams.
 
         .EXAMPLE
-        PS> extension -name "File"
-        File.txt
+        PS> Get-AlternateDataStream -Path <path-to-directory>
+        a list with all files in this directory containing alternate data streams.
 
         .EXAMPLE
-        PS> extension -name "File" -extension "doc"
-        File.doc
+        PS> Get-AlternateDataStream -Recurse
+        A list with all files in the current directory and sub-directories containing alternate data streams.
 
         .EXAMPLE
-        PS> extension "File" "doc"
-        File.doc
-
-        .LINK
-        Online version: http://www.fabrikam.com/extension.html
-
-        .LINK
-        Set-Item
+        PS> Get-AlternateDataStream -ExportToJson -OutputFile "./ads.json"
+        A list with all files in the current directory displayed on STDOUT, the same list is exported as JSON-file to ./ads.json.
     #>
     param(
         [ValidateNotNullOrEmpty()]
         [string]$Path = "./",
-        [bool]$ExportToJSON = $true,
+        [switch]$Recurse,
+        [switch]$ExportToJson,
         [string]$OutputFile = "./AlternateDataStreams.json"
     )
 
-    $FileStreams = Get-ChildItem -Path $Path -Recurse | ForEach-Object { Get-Item $_.FullName -Stream * | Where-Object -Property Stream -ne ':$Data' } | Select-Object -Property FileName, Stream
+    $FileStreams = Get-ChildItem -Path $Path -Recurse:$Recurse | ForEach-Object { Get-Item $_.FullName -Stream * | Where-Object -Property Stream -ne ':$Data' } | Select-Object -Property FileName, Stream
 
     if ($ExportToJSON) {
         ConvertTo-Json -InputObject $FileStreams | Out-File -FilePath $OutputFile
-    }
-
-    foreach ($File in $FileStreams) {
-        [PSCustomObject]@{
-            FileName = $File.FileName
-            Stream   = $File.Stream
-        }
     }
 
     return $FileStreams
