@@ -116,7 +116,7 @@ function Get-NTFSVolume {
     return $Volumes
 }
 
-function New-ADSTestStream {
+function New-AlternateDataStreamFile {
     <#
         .SYNOPSIS
         Creates a txt-file with an alternate data stream. This file is usually just used to test this PowerShell module.
@@ -126,11 +126,17 @@ function New-ADSTestStream {
         The file is by default called "ADSTestFile.txt" with an alternate data stream by default called "hidden".
         The file is created in your current working directory. If a file with the same name already exists, a GUID will be prepended to the filename.
 
-        .PARAMETER FileName
-        Specifies the file name. Default is "ADSTestFile.txt".
+        .PARAMETER Path
+        Specifies the file name. Default is "AlternateDataStream.txt".
 
         .PARAMETER AlternateDataStream
         Specifies the name of the alternate data stream. Default is "hidden".
+
+        .PARAMETER Value
+        The value which will be set as file content.
+
+        .PARAMETER AlternateDataStreamValue
+        The value which will be set as content of the alternate data stream.
 
         .INPUTS
         None.
@@ -139,30 +145,35 @@ function New-ADSTestStream {
         A file with an alternate data stream.
 
         .EXAMPLE
-        PS> New-ADSTestStream
+        PS> New-AlternateDataStreamFile
         Directory: C:\Users\<username>\Desktop
 
         Mode                 LastWriteTime         Length Name
         ----                 -------------         ------ ----
-        -a----               <date, time>               0 ADSTestFile.txt
+        -a----               <date, time>               0 AlternateDataStream.txt
 
         .EXAMPLE
-        PS> New-ADSTestStream -FileName <filename> -AlternateDataStream <alternate data stream>
+        PS> New-AlternateDataStreamFile -Path <path-to-filename> -AlternateDataStream <alternate data stream> -AlternateDataStreamValue "This is a ADS."
     #>
 
-    $FileName = "ADSTestFile.txt"
-    $AlternateDataStream = "hidden"
-    if (Test-Path $FileName) {
-        $FileName = [guid]::NewGuid().Guid + "-" + $FileName
+    param (
+        [string]$Path = "AlternateDataStream.txt",
+        [string]$AlternateDataStream = "hidden",
+        [string]$Value,
+        [string]$AlternateDataStreamValue
+    )
+
+    if (Test-Path $Path) {
+        $Path = [guid]::NewGuid().Guid + "-" + $Path
     }
-    New-Item -ItemType File -Name $FileName
-    Add-Content -Value "This is the test file for alternate data streams" -Path "$FileName"
-    Add-Content -Value "If you see this you take a look at the alternate data stream" -Path "${FileName}:${AlternateDataStream}"
+    New-Item -ItemType File -Name $Path -Force
+    Add-Content -Value  $Value -Path "$Path"
+    Add-Content -Value $AlternateDataStreamValue -Path "${Path}:${AlternateDataStream}"
 }
 
 # Export the functions provided by this module
 if ($IsWindows -or $null -eq $IsWindows) {
-    Export-ModuleMember -Function "Get-NTFSVolume", "Get-AlternateDataStreamContent", "Get-AlternateDataStream"
+    Export-ModuleMember -Function "Get-AlternateDataStream", "Get-AlternateDataStreamContent", "Get-NTFSVolume", "New-AlternateDataStreamFile"
 }
 else {
     Export-ModuleMember
