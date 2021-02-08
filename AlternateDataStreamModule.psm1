@@ -1,7 +1,7 @@
 function Get-AlternateDataStream {
     <#
         .SYNOPSIS
-        Get a list of files with alternate data streams on NTFS drives.
+        Get a list of files with alternate data streams on NTFS drives. This works only on Windows systems.
 
         .DESCRIPTION
         Get a list of files with alternate data streams. Every file has the data stream :$Data. This command only yields files with additional alternate data streams.
@@ -16,7 +16,7 @@ function Get-AlternateDataStream {
         A switch to export the results to a JSON-file.
 
         .PARAMETER OutputFile
-        Specifies a filename for the JSON-file. This parameter is only used when the switch ExportToJson is set. Default is "AlternateDataStreams.json".
+        Specifies a filename for the JSON-file. This parameter is only used when the switch ExportToJson is set. Default is "AlternateDataStreams.json". If a file with this name already exists, nothing happens.
 
         .INPUTS
         None.
@@ -43,11 +43,13 @@ function Get-AlternateDataStream {
         [switch]$ExportToJson,
         [string]$OutputFile = "./AlternateDataStreams.json"
     )
-
-    $FileStreams = Get-ChildItem -Path $Path -Recurse:$Recurse | ForEach-Object { Get-Item $_.FullName -Stream * | Where-Object -Property Stream -ne ':$Data' } | Select-Object -Property FileName, Stream
-
-    if ($ExportToJSON) {
+    if (Test-Path $Path) {
+        $FileStreams = Get-ChildItem -Path $Path -Recurse:$Recurse | ForEach-Object { Get-Item $_.FullName -Stream * | Where-Object -Property Stream -ne ':$Data' } | Select-Object -Property FileName, Stream
+    }
+    if ($ExportToJSON -and -not $(Test-Path($OutputFile))) {
         ConvertTo-Json -InputObject $FileStreams | Out-File -FilePath $OutputFile
+    } elseif ($ExportToJSON -and $(Test-Path $OutputFile)) {
+        Write-Error "The file already exists, please specify a new name or rename the existing file and run the Cmdlet again."
     }
 
     return $FileStreams
@@ -56,7 +58,7 @@ function Get-AlternateDataStream {
 function Get-AlternateDataStreamContent {
     <#
         .SYNOPSIS
-        Get the content of a Alternate Data Stream on a NTFS system.
+        Get the content of a Alternate Data Stream on a NTFS system. This works only on Windows systems.
 
         .DESCRIPTION
         Get the content of a Alternate Data Stream on a NTFS system.
@@ -104,9 +106,14 @@ function Get-NTFSVolume {
         ----------- ------------ -------------- --------- ------------ ----------------- -------------      ----
         C                        NTFS           Fixed     Healthy      OK                <size remaining>   <total size>
     #>
-    $Volumes = Get-Volume | Where-Object -Property FileSystemType -eq "NTFS" | Where-Object -Property DriveLetter
+    try {
+        $Volumes = Get-Volume | Where-Object -Property FileSystemType -eq "NTFS" | Where-Object -Property DriveLetter
+    }
+    catch [CommandNotFoundException] {
+        $Volumes = $null
+        Write-Error "This function does not work on your system since the Cmdlet `Get-Volume` doesn't exist."
+    }
     return $Volumes
-
 }
 
 function New-ADSTestStream {
@@ -115,7 +122,9 @@ function New-ADSTestStream {
         Creates a txt-file with an alternate data stream. This file is usually just used to test this PowerShell module.
 
         .DESCRIPTION
-        Creates a txt-file with an alternate data stream. The file is by default called "ADSTestFile.txt" with an alternate data stream by default called "hidden".
+        Creates a txt-file with an alternate data stream.
+        The file is by default called "ADSTestFile.txt" with an alternate data stream by default called "hidden".
+        The file is created in your current working directory. If a file with the same name already exists, a GUID will be prepended to the filename.
 
         .PARAMETER FileName
         Specifies the file name. Default is "ADSTestFile.txt".
@@ -143,8 +152,18 @@ function New-ADSTestStream {
 
     $FileName = "ADSTestFile.txt"
     $AlternateDataStream = "hidden"
-
+    if (Test-Path $FileName) {
+        $FileName = [guid]::NewGuid().Guid + "-" + $FileName
+    }
     New-Item -ItemType File -Name $FileName
-    Add-Content -Value "This is the test file for alternate data streams" -Path "./$FileName"
-    Add-Content -Value "If you see this you take a look at the alternate data stream" -Path "./${FileName}:${AlternateDataStream}"
+    Add-Content -Value "This is the test file for alternate data streams" -Path "$FileName"
+    Add-Content -Value "If you see this you take a look at the alternate data stream" -Path "${FileName}:${AlternateDataStream}"
+}
+
+# Export the functions provided by this module
+if ($IsWindows -or $null -eq $IsWindows) {
+    Export-ModuleMember -Function "Get-NTFSVolume", "Get-AlternateDataStreamContent", "Get-AlternateDataStream"
+}
+else {
+    Export-ModuleMember
 }
