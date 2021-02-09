@@ -6,10 +6,10 @@ Alternate Data Streams are a feature of NTFS (Filesystem). They can be used to h
 
 ## Usage
 
-To use the functions provided by this module, you need to import the module first.
+To use the functions provided by this module, you need to import the module first. After downloading/cloning this repository of course. Import the module with the following command, if you are in the directory where you downloaded it:
 
 ```` PowerShell
-Import-Module ./AlternateDataStreamModule.ps1
+Import-Module ./AlternateDataStreamModule
 ````
 
-Now you are able to use the functions provided by this module. On Windows the following functions are available: `Get-AlternateDataStream`, `Get-AlternateDataStreamContent`, `Get-NTFSVolume`
+Now you are able to use the functions provided by this module. On Windows the following functions are available: `Get-AlternateDataStream`, `Get-AlternateDataStreamContent`, `Get-NTFSVolume`, `New-AlternateDataStreamFile`

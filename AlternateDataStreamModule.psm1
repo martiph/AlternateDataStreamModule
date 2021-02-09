@@ -18,9 +18,6 @@ function Get-AlternateDataStream {
         .PARAMETER OutputFile
         Specifies a filename for the JSON-file. This parameter is only used when the switch ExportToJson is set. Default is "AlternateDataStreams.json". If a file with this name already exists, nothing happens.
 
-        .INPUTS
-        None.
-
         .OUTPUTS
         Returns a list of files with alternate data streams.
 
@@ -63,28 +60,25 @@ function Get-AlternateDataStreamContent {
         .DESCRIPTION
         Get the content of a Alternate Data Stream on a NTFS system.
 
-        .PARAMETER File
-        Specifies the file name.
+        .PARAMETER Path
+        Specifies the path to the file.
 
         .PARAMETER Stream
         Specifies the name of alternate data stream.
 
-        .OUTPUTS
-        System.String. Add-Extension returns a string with the extension or file name.
-
         .EXAMPLE
-        PS> Get-AlternateDataStreamContent -File <path to the file> -Stream <name of the alternate data stream>
+        PS> Get-AlternateDataStreamContent -Path <path to the file> -Stream <name of the alternate data stream>
         Content of the alternate data stream
     #>
 
     param(
         [Parameter(Mandatory)]
-        [string]$File,
+        [string]$Path,
         [Parameter(Mandatory)]
         [string]$Stream
     )
 
-    $FileContent = Get-Content -Path $File -Stream $Stream
+    $FileContent = Get-Content -Path $Path -Stream $Stream
     return $FileContent
 }
 
@@ -137,9 +131,6 @@ function New-AlternateDataStreamFile {
 
         .PARAMETER AlternateDataStreamValue
         The value which will be set as content of the alternate data stream.
-
-        .INPUTS
-        None.
 
         .OUTPUTS
         A file with an alternate data stream.
